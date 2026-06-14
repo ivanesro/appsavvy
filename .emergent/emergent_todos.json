@@ -4,27 +4,27 @@
     "status": "completed"
   },
   {
-    "content": "Enhancement #5 Data: crawl Crustdata docs, add 24 new real properties/signals (52 signals total, 180+ links) (DONE)",
+    "content": "Enhancement #5 Data: crawl Crustdata docs, add 24 new real properties/signals (52 signals total, 212 links) (DONE)",
     "status": "completed"
   },
   {
-    "content": "Enhancement #1 Legend toggles to show/hide node categories (DONE, verified)",
+    "content": "Enhancement #1 Legend toggles to show/hide node categories (DONE, tested)",
     "status": "completed"
   },
   {
-    "content": "Enhancement #2 Space-universe styling: starfield + luminous brighter node cores (DONE, verified)",
+    "content": "Enhancement #2 Space-universe styling: starfield + luminous brighter node cores (DONE, tested)",
     "status": "completed"
   },
   {
-    "content": "Enhancement #4 More spacing: stronger repulsion/collision/link distance (DONE, verified)",
+    "content": "Enhancement #4 More spacing: stronger repulsion/collision/link distance (DONE, tested)",
     "status": "completed"
   },
   {
-    "content": "Enhancement #3 Properties Catalog view (/catalog) with type/universe/search filters + provider chips (DONE, verified)",
+    "content": "Enhancement #3 Properties Catalog view (/catalog) with filters + provider chips (DONE, tested)",
     "status": "completed"
   },
   {
-    "content": "Test all enhancements end-to-end via testing_agent_v3 + fix issues",
-    "status": "in_progress"
+    "content": "Test all enhancements end-to-end via testing_agent_v3 (DONE — 21/21 passed, 100%)",
+    "status": "completed"
   }
 ]

@@ -11,6 +11,13 @@
 ## 2) Implementation Steps
 
 ### Phase 1 — Core POC (Isolation) ✅ (already proven)
+
+### ENHANCEMENTS ROUND 1 (user-requested) ✅ ALL DONE & TESTED 100%
+1. Legend toggles — bottom-left legend rows toggle node categories (galaxy/sun/property) on the canvas.
+2. Space-universe styling — in-canvas parallax starfield (320 stars) + luminous brighter node cores.
+3. Properties Catalog view — new /catalog route: browsable grid of all 52 data points with type/universe/search filters + clickable provider chips that jump into the graph.
+4. More spacing — stronger physics (charge -620, distanceMax 1100, collide +22, link distance 98).
+5. Data crawl — added 24 NEW real Crustdata-based properties/signals (now 52 signals, 212 graph links).
 - ✅ Zite DB connectivity + schema verified (tables.zite.com).
 - ✅ Create/read/delete records; junction link resolution proven.
 - ✅ Claude grounding proven (claude-sonnet-4-6 via EMERGENT_LLM_KEY).
