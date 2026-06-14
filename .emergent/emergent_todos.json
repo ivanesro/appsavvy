@@ -1,0 +1,22 @@
+[
+  {
+    "content": "Phase 1: Core POC — Zite connectivity, writes, junction edges, Claude grounding (DONE)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 2: Seed Zite with real data — 32 providers, 28 signals, 54 connectors, 119 provider_signals, 32 aggregator_providers, 49 provider_universes (DONE)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 3: FastAPI backend — graph/provider/universes/crawl-jobs/intel SSE (DONE, tested)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 4: React frontend — graph, tab filter, galaxy panel, intel sidebar, command palette, node SEO page (DONE, visually verified)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 5: End-to-end testing via testing_agent_v3 + fix all issues",
+    "status": "in_progress"
+  }
+]
