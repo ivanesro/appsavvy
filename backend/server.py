@@ -67,6 +67,11 @@ async def get_provider(slug: str):
     return detail
 
 
+@api_router.get("/signals")
+async def get_signals():
+    return await graph_builder.list_signals()
+
+
 @api_router.get("/crawl-jobs")
 async def get_crawl_jobs():
     return await graph_builder.list_crawl_jobs()

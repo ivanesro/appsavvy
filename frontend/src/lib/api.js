@@ -19,6 +19,12 @@ export async function fetchUniverses() {
   return r.json();
 }
 
+export async function fetchSignals() {
+  const r = await fetch(`${API}/signals`);
+  if (!r.ok) throw new Error(`signals ${r.status}`);
+  return r.json();
+}
+
 // Stream the Universe Intel response over SSE-style fetch.
 export async function streamIntel(message, sessionId, handlers) {
   const { onSession, onDelta, onDone, onError } = handlers;

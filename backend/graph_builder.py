@@ -276,6 +276,43 @@ async def grounding_context():
     return "\n".join(lines), names
 
 
+async def list_signals():
+    """Catalog of all data points (Entity/Signal/Property) with their providers."""
+    data = await zite.get_all_tables()
+    prov_slug_by_name = {p["fields"].get("name"): p["fields"].get("slug")
+                         for p in data["providers"] if p["fields"].get("name")}
+    # providers per signal
+    by_signal = {}
+    for j in data["provider_signals"]:
+        f = j["fields"]
+        sn = (f.get("signal_name") or "").strip()
+        pn = (f.get("provider_name") or "").strip()
+        if not sn or not pn:
+            continue
+        by_signal.setdefault(sn, []).append(
+            {"name": pn, "slug": prov_slug_by_name.get(pn), "quality": f.get("coverage_quality")})
+    quality_rank = {"Primary": 0, "Secondary": 1, "Limited": 2}
+    out = []
+    for s in data["signals"]:
+        f = s["fields"]
+        if not f.get("name"):
+            continue
+        provs = by_signal.get(f["name"], [])
+        provs.sort(key=lambda x: (quality_rank.get(x.get("quality"), 3), x["name"]))
+        out.append({
+            "name": f.get("name"), "slug": f.get("slug"),
+            "signal_type": f.get("signal_type") or "Signal",
+            "universe": f.get("universe"), "field_name": f.get("field_name"),
+            "field_type": f.get("field_type"), "update_cadence": f.get("update_cadence"),
+            "description": f.get("description"), "providers": provs,
+            "provider_count": len(provs),
+        })
+    # order: Property, Signal, Entity then by provider_count desc
+    type_rank = {"Property": 0, "Signal": 1, "Entity": 2}
+    out.sort(key=lambda x: (type_rank.get(x["signal_type"], 3), -x["provider_count"], x["name"]))
+    return out
+
+
 async def list_crawl_jobs():
     rows = await zite.get_table("crawl_jobs")
     return [{"provider_name": r["fields"].get("provider_name"), "status": r["fields"].get("status"),

@@ -54,7 +54,7 @@ class APITester:
 
 
 def test_graph(tester):
-    """Test GET /api/graph"""
+    """Test GET /api/graph - NEW: expect ~52 signals, 32 providers, 6 aggregators, 210+ links"""
     def run():
         r = requests.get(f"{BASE_URL}/graph", timeout=30)
         print(f"Status: {r.status_code}")
@@ -75,19 +75,26 @@ def test_graph(tester):
         print(f"Links count: {len(links)}")
         print(f"Stats: {stats}")
         
-        # Check node counts (expect ~66 nodes)
-        assert len(nodes) >= 50, f"Expected at least 50 nodes, got {len(nodes)}"
+        # NEW: Check stats match expected counts
+        assert stats.get("providers") == 32, f"Expected 32 providers in stats, got {stats.get('providers')}"
+        assert stats.get("signals") == 52, f"Expected 52 signals in stats, got {stats.get('signals')}"
+        assert stats.get("aggregators") == 6, f"Expected 6 aggregators in stats, got {stats.get('aggregators')}"
+        assert stats.get("links") >= 210, f"Expected at least 210 links in stats, got {stats.get('links')}"
+        
+        # Check node counts (expect ~90 nodes: 32+52+6)
+        assert len(nodes) >= 85, f"Expected at least 85 nodes, got {len(nodes)}"
         assert len(nodes) <= 100, f"Expected at most 100 nodes, got {len(nodes)}"
         
-        # Check link counts (expect ~150 links)
-        assert len(links) >= 100, f"Expected at least 100 links, got {len(links)}"
-        assert len(links) <= 250, f"Expected at most 250 links, got {len(links)}"
+        # Check link counts (expect ~210+ links)
+        assert len(links) >= 210, f"Expected at least 210 links, got {len(links)}"
+        assert len(links) <= 300, f"Expected at most 300 links, got {len(links)}"
         
         # Check node types
         node_types = set(n.get("type") for n in nodes)
         print(f"Node types: {node_types}")
         assert "provider" in node_types, "Missing 'provider' type nodes"
         assert "signal" in node_types, "Missing 'signal' type nodes"
+        assert "aggregator" in node_types, "Missing 'aggregator' type nodes"
         
         # Check node structure
         sample_node = nodes[0]
@@ -103,9 +110,9 @@ def test_graph(tester):
         assert "target" in sample_link, "Link missing 'target'"
         assert "kind" in sample_link, "Link missing 'kind'"
         
-        print(f"✓ Graph structure valid")
+        print(f"✓ Graph structure valid with NEW signal counts")
     
-    tester.test("GET /api/graph", run)
+    tester.test("GET /api/graph (NEW: 52 signals)", run)
 
 
 def test_universes(tester):
@@ -243,6 +250,46 @@ def test_provider_zoominfo(tester):
     tester.test("GET /api/provider/zoominfo", run)
 
 
+def test_provider_crustdata(tester):
+    """Test GET /api/provider/crustdata - NEW: check for new signals like Web Traffic, Glassdoor Rating, LinkedIn Followers"""
+    def run():
+        r = requests.get(f"{BASE_URL}/provider/crustdata", timeout=10)
+        print(f"Status: {r.status_code}")
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        
+        data = r.json()
+        print(f"Provider name: {data.get('name')}")
+        print(f"Slug: {data.get('slug')}")
+        
+        # Check name
+        assert data.get("name") == "Crustdata", f"Expected name 'Crustdata', got {data.get('name')}"
+        
+        # Check structure
+        required_keys = ["name", "slug", "connectors", "signals", "aggregators"]
+        for key in required_keys:
+            assert key in data, f"Provider detail missing key: {key}"
+        
+        # Check signals
+        signals = data["signals"]
+        print(f"Signals count: {len(signals)}")
+        assert len(signals) > 0, "Expected at least 1 signal"
+        
+        # NEW: Check for new signals added from Crustdata research
+        signal_names = [s.get("signal_name") for s in signals]
+        print(f"Signal names: {signal_names}")
+        
+        new_signals = ["Web Traffic", "Glassdoor Rating", "LinkedIn Followers"]
+        found_new = [s for s in new_signals if s in signal_names]
+        print(f"Found new signals: {found_new}")
+        
+        # At least one of the new signals should be present
+        assert len(found_new) > 0, f"Expected at least one of {new_signals} in Crustdata signals, found: {signal_names}"
+        
+        print(f"✓ Crustdata provider detail includes new signals: {found_new}")
+    
+    tester.test("GET /api/provider/crustdata (NEW signals)", run)
+
+
 def test_provider_404(tester):
     """Test GET /api/provider/non-existent-slug returns 404"""
     def run():
@@ -253,6 +300,63 @@ def test_provider_404(tester):
         print(f"✓ Non-existent provider returns 404")
     
     tester.test("GET /api/provider/non-existent (404)", run)
+
+
+def test_signals(tester):
+    """Test GET /api/signals - NEW: expect ~52 signals with provider details"""
+    def run():
+        r = requests.get(f"{BASE_URL}/signals", timeout=10)
+        print(f"Status: {r.status_code}")
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}"
+        
+        data = r.json()
+        print(f"Signals count: {len(data)}")
+        
+        # NEW: Expect ~52 signals (was 28 before)
+        assert len(data) >= 50, f"Expected at least 50 signals, got {len(data)}"
+        assert len(data) <= 60, f"Expected at most 60 signals, got {len(data)}"
+        
+        # Check structure
+        sample = data[0]
+        print(f"Sample signal: {sample.get('name')} - {sample.get('signal_type')} - {sample.get('universe')}")
+        required_keys = ["name", "slug", "signal_type", "universe", "field_type", "field_name", 
+                        "update_cadence", "description", "providers", "provider_count"]
+        for key in required_keys:
+            assert key in sample, f"Signal missing required key: {key}"
+        
+        # Check signal_type distribution
+        type_counts = {}
+        for s in data:
+            st = s.get("signal_type", "Unknown")
+            type_counts[st] = type_counts.get(st, 0) + 1
+        
+        print(f"Signal type distribution: {type_counts}")
+        
+        # NEW: Verify counts - expect ~30 Property, ~18 Signal, ~4 Entity
+        assert type_counts.get("Property", 0) >= 25, f"Expected at least 25 Property signals, got {type_counts.get('Property', 0)}"
+        assert type_counts.get("Signal", 0) >= 15, f"Expected at least 15 Signal signals, got {type_counts.get('Signal', 0)}"
+        assert type_counts.get("Entity", 0) >= 3, f"Expected at least 3 Entity signals, got {type_counts.get('Entity', 0)}"
+        
+        # NEW: Check 'Verified Email' has provider_count >= 8
+        verified_email = next((s for s in data if s.get("name") == "Verified Email"), None)
+        if verified_email:
+            print(f"Verified Email provider_count: {verified_email.get('provider_count')}")
+            assert verified_email.get("provider_count", 0) >= 8, \
+                f"Expected 'Verified Email' to have at least 8 providers, got {verified_email.get('provider_count')}"
+        else:
+            print("WARNING: 'Verified Email' signal not found in response")
+        
+        # Check providers array structure
+        if sample.get("providers"):
+            prov_sample = sample["providers"][0]
+            print(f"Sample provider in signal: {prov_sample}")
+            assert "name" in prov_sample, "Provider missing 'name'"
+            assert "slug" in prov_sample, "Provider missing 'slug'"
+            assert "quality" in prov_sample, "Provider missing 'quality'"
+        
+        print(f"✓ Signals endpoint returns ~52 items with correct structure")
+    
+    tester.test("GET /api/signals (NEW: ~52 items)", run)
 
 
 def test_crawl_jobs(tester):
@@ -373,10 +477,12 @@ def main():
     
     # Run all tests
     test_graph(tester)
+    test_signals(tester)  # NEW
     test_universes(tester)
     test_providers(tester)
     test_provider_apollo(tester)
     test_provider_zoominfo(tester)
+    test_provider_crustdata(tester)  # NEW
     test_provider_404(tester)
     test_crawl_jobs(tester)
     test_intel_chat(tester)

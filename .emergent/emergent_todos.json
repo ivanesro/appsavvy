@@ -1,22 +1,30 @@
 [
   {
-    "content": "Phase 1: Core POC — Zite connectivity, writes, junction edges, Claude grounding (DONE)",
+    "content": "Phase 1-4: POC, seed, backend, frontend graph/panel/intel/palette/node-page (DONE, tested)",
     "status": "completed"
   },
   {
-    "content": "Phase 2: Seed Zite with real data — 32 providers, 28 signals, 54 connectors, 119 provider_signals, 32 aggregator_providers, 49 provider_universes (DONE)",
+    "content": "Enhancement #5 Data: crawl Crustdata docs, add 24 new real properties/signals (52 signals total, 180+ links) (DONE)",
     "status": "completed"
   },
   {
-    "content": "Phase 3: FastAPI backend — graph/provider/universes/crawl-jobs/intel SSE (DONE, tested)",
+    "content": "Enhancement #1 Legend toggles to show/hide node categories (DONE, verified)",
     "status": "completed"
   },
   {
-    "content": "Phase 4: React frontend — graph, tab filter, galaxy panel, intel sidebar, command palette, node SEO page (DONE, visually verified)",
+    "content": "Enhancement #2 Space-universe styling: starfield + luminous brighter node cores (DONE, verified)",
     "status": "completed"
   },
   {
-    "content": "Phase 5: End-to-end testing via testing_agent_v3 + fix all issues",
+    "content": "Enhancement #4 More spacing: stronger repulsion/collision/link distance (DONE, verified)",
+    "status": "completed"
+  },
+  {
+    "content": "Enhancement #3 Properties Catalog view (/catalog) with type/universe/search filters + provider chips (DONE, verified)",
+    "status": "completed"
+  },
+  {
+    "content": "Test all enhancements end-to-end via testing_agent_v3 + fix issues",
     "status": "in_progress"
   }
 ]

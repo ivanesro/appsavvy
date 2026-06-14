@@ -11,13 +11,52 @@ function hexA(hex, a) {
 }
 
 export default function GraphCanvas({
-  data, activeUniverse, searchQuery, selectedId, focusSignal,
+  data, activeUniverse, searchQuery, selectedId, focusSignal, visibleTypes,
   onSelectProvider, onClearFocus,
 }) {
   const fgRef = useRef();
   const wrapRef = useRef();
   const [dims, setDims] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [hoverId, setHoverId] = useState(null);
+
+  const vt = useMemo(() => visibleTypes || { galaxy: true, sun: true, property: true }, [visibleTypes]);
+  const nodeCat = useCallback((n) => {
+    if (n.type === "provider" || n.type === "aggregator") return "galaxy";
+    if (n.signal_type === "Property") return "property";
+    return "sun";
+  }, []);
+
+  // background starfield (graph-space, pans + zooms with the universe)
+  const stars = useMemo(() => {
+    const arr = [];
+    const tints = ["255,255,255", "200,220,255", "232,160,30", "30,232,216"];
+    for (let i = 0; i < 320; i++) {
+      arr.push({
+        x: (Math.random() - 0.5) * 6000,
+        y: (Math.random() - 0.5) * 6000,
+        r: Math.random() * 1.5 + 0.5,
+        a: Math.random() * 0.55 + 0.18,
+        tint: tints[Math.floor(Math.random() * (Math.random() < 0.8 ? 2 : tints.length))],
+      });
+    }
+    return arr;
+  }, []);
+
+  const drawStars = useCallback((ctx, globalScale) => {
+    const gs = globalScale || 1;
+    for (const s of stars) {
+      const rr = s.r / gs;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${s.tint},${s.a})`;
+      ctx.arc(s.x, s.y, rr, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }, [stars]);
+
+  // repaint when category visibility toggles
+  useEffect(() => {
+    try { fgRef.current && fgRef.current.refresh && fgRef.current.refresh(); } catch (e) {}
+  }, [vt]);
 
   // adjacency for highlight
   const neighbors = useMemo(() => {
@@ -43,15 +82,15 @@ export default function GraphCanvas({
     if (!fgRef.current || !data.nodes?.length) return;
     const t = setTimeout(() => {
       try {
-        fgRef.current.d3Force("charge", forceManyBody().strength(-460).distanceMax(620));
-        fgRef.current.d3Force("collide", forceCollide((n) => n.size / 2 + 14).strength(0.9));
+        fgRef.current.d3Force("charge", forceManyBody().strength(-620).distanceMax(1100));
+        fgRef.current.d3Force("collide", forceCollide((n) => n.size / 2 + 22).strength(0.95));
         const lf = fgRef.current.d3Force("link");
-        if (lf) lf.distance(70).strength(0.14);
+        if (lf) lf.distance(98).strength(0.12);
         fgRef.current.d3ReheatSimulation();
       } catch (e) {}
     }, 60);
     // backup fit in case engine settles silently
-    const f = setTimeout(() => fitView(), 3500);
+    const f = setTimeout(() => fitView(), 3800);
     return () => { clearTimeout(t); clearTimeout(f); };
   }, [data]); // eslint-disable-line
 
@@ -117,26 +156,45 @@ export default function GraphCanvas({
   const drawNode = useCallback((node, ctx, globalScale) => {
     const x = node.x, y = node.y;
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    if (!vt[nodeCat(node)]) return;
     const r = Math.max(2.2, node.size / 2 / 1);
     const a = nodeAlpha(node);
     const isHi = a >= 0.99;
 
     // glow for providers + aggregators
     if (node.type === "provider" || node.type === "aggregator") {
-      const gr = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2);
-      gr.addColorStop(0, hexA(node.color, 0.34 * a));
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, r * 2.6);
+      gr.addColorStop(0, hexA(node.color, 0.42 * a));
+      gr.addColorStop(0.5, hexA(node.color, 0.16 * a));
       gr.addColorStop(1, hexA(node.color, 0));
       ctx.fillStyle = gr;
       ctx.beginPath();
-      ctx.arc(x, y, r * 2.2, 0, 2 * Math.PI);
+      ctx.arc(x, y, r * 2.6, 0, 2 * Math.PI);
+      ctx.fill();
+    } else {
+      // soft halo for signal/property nodes too (brighter dots)
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, r * 1.9);
+      gr.addColorStop(0, hexA(node.color, 0.3 * a));
+      gr.addColorStop(1, hexA(node.color, 0));
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.arc(x, y, r * 1.9, 0, 2 * Math.PI);
       ctx.fill();
     }
 
     // core
     ctx.beginPath();
     ctx.arc(x, y, r, 0, 2 * Math.PI);
-    ctx.fillStyle = hexA(node.color, Math.max(0.12, a));
+    ctx.fillStyle = hexA(node.color, Math.max(0.18, a));
     ctx.fill();
+
+    // bright inner highlight (gives nodes a luminous, star-like core)
+    if (a > 0.3) {
+      ctx.beginPath();
+      ctx.arc(x - r * 0.22, y - r * 0.22, r * 0.42, 0, 2 * Math.PI);
+      ctx.fillStyle = hexA("#FFFFFF", 0.5 * a);
+      ctx.fill();
+    }
 
     // aggregator ring
     if (node.type === "aggregator") {
@@ -167,16 +225,17 @@ export default function GraphCanvas({
       const label = (node.label || "").toUpperCase();
       ctx.fillText(label, x, y + r + 2.5 / globalScale);
     }
-  }, [nodeAlpha, selectedId]);
+  }, [nodeAlpha, selectedId, vt, nodeCat]);
 
   const paintPointerArea = useCallback((node, color, ctx) => {
     if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) return;
+    if (!vt[nodeCat(node)]) return;
     const r = Math.max(4, node.size / 2 + 3);
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
     ctx.fill();
-  }, []);
+  }, [vt, nodeCat]);
 
   const linkColor = useCallback((link) => {
     const s = typeof link.source === "object" ? link.source.id : link.source;
@@ -213,6 +272,14 @@ export default function GraphCanvas({
         warmupTicks={20}
         nodeCanvasObject={drawNode}
         nodePointerAreaPaint={paintPointerArea}
+        onRenderFramePre={(ctx, globalScale) => drawStars(ctx, globalScale)}
+        linkVisibility={(l) => {
+          const s = typeof l.source === "object" ? l.source : null;
+          const t = typeof l.target === "object" ? l.target : null;
+          if (s && !vt[nodeCat(s)]) return false;
+          if (t && !vt[nodeCat(t)]) return false;
+          return true;
+        }}
         linkColor={linkColor}
         linkWidth={(l) => {
           const s = typeof l.source === "object" ? l.source.id : l.source;

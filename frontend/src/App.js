@@ -9,6 +9,7 @@ import GalaxyPanel from "@/components/GalaxyPanel";
 import IntelSidebar from "@/components/IntelSidebar";
 import CommandPalette from "@/components/CommandPalette";
 import NodePage from "@/pages/NodePage";
+import CatalogView from "@/pages/CatalogView";
 
 function GraphHome() {
   const [graph, setGraph] = useState({ nodes: [], links: [] });
@@ -20,6 +21,7 @@ function GraphHome() {
   const [focusSignal, setFocusSignal] = useState(null);
   const [intelOpen, setIntelOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [visibleTypes, setVisibleTypes] = useState({ galaxy: true, sun: true, property: true });
   const [params, setParams] = useSearchParams();
 
   useEffect(() => {
@@ -90,6 +92,7 @@ function GraphHome() {
             searchQuery={searchQuery}
             selectedId={selectedProvider?.id}
             focusSignal={focusSignal}
+            visibleTypes={visibleTypes}
             onSelectProvider={handleSelectProvider}
             onClearFocus={() => { setFocusSignal(null); }}
           />
@@ -109,10 +112,11 @@ function GraphHome() {
 
       <TopBar
         activeUniverse={activeUniverse}
+        view="graph"
         onTab={(t) => { setActiveUniverse(t); setSearchQuery(""); }}
         onOpenSearch={() => setPaletteOpen(true)}
       />
-      <Legend />
+      <Legend visibleTypes={visibleTypes} onToggle={(k) => setVisibleTypes((v) => ({ ...v, [k]: !v[k] }))} />
 
       {!intelOpen && (
         <div className="intel-pill" data-testid="intel-pill" onClick={() => setIntelOpen(true)}>
@@ -150,6 +154,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<GraphHome />} />
+          <Route path="/catalog" element={<CatalogView />} />
           <Route path="/node/:slug" element={<NodePage />} />
         </Routes>
       </BrowserRouter>
